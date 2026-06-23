@@ -1,0 +1,146 @@
+/* Styling for Shopify ZIP Pricing Widget Theme Extension */
+
+:root {
+  --sf-btn-bg: #f9aa00;
+  --sf-btn-bg-hover: #e09900;
+  --sf-btn-color: #1c1b1b;
+  --sf-border-color: #e8e8e8;
+}
+
+.sf-zip-widget {
+  margin: 20px 0;
+  font-family: 'Jost', -apple-system, BlinkMacSystemFont, sans-serif;
+  max-width: 400px;
+  border: 1px solid var(--sf-border-color);
+  border-radius: 4px;
+  padding: 16px;
+  background-color: #fcfcfc;
+}
+
+.sf-widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.sf-widget-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #1c1b1b;
+}
+
+.sf-widget-badge {
+  font-size: 11px;
+  color: #707070;
+  display: none;
+  align-items: center;
+  gap: 4px;
+}
+
+.sf-widget-badge-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background-color: #4caf50;
+  border-radius: 50%;
+}
+
+.sf-widget-form-row {
+  display: flex;
+  gap: 8px;
+}
+
+#sf-zip-input {
+  flex: 1;
+  border: 1px solid #c8c8c8;
+  border-radius: 0;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  background: #ffffff;
+  color: #1c1b1b;
+  transition: border-color 0.2s;
+}
+
+#sf-zip-input:focus {
+  border-color: var(--sf-btn-bg);
+}
+
+#sf-zip-submit {
+  background-color: var(--sf-btn-bg);
+  color: var(--sf-btn-color);
+  border: none;
+  font-weight: 600;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 0;
+  transition: background-color 0.2s;
+  min-width: 120px;
+}
+
+#sf-zip-submit:hover {
+  background-color: var(--sf-btn-bg-hover);
+}
+
+#sf-zip-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.sf-widget-result {
+  display: none;
+  margin-top: 14px;
+  border-top: 1px dashed #e0e0e0;
+  padding-top: 14px;
+  animation: sfFadeIn 0.3s ease-out forwards;
+}
+
+.sf-res-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #707070;
+  margin-bottom: 6px;
+}
+
+.sf-res-divider {
+  border-top: 1px solid #eeeeee;
+  margin: 6px 0;
+}
+
+.sf-res-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1c1b1b;
+}
+
+.sf-res-total-price {
+  color: var(--sf-btn-bg);
+}
+
+.sf-shipping-badge {
+  background-color: #f6f6f6;
+  border-left: 3px solid var(--sf-btn-bg);
+  padding: 10px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #333333;
+}
+
+.sf-shipping-badge-method {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+@keyframes sfFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
