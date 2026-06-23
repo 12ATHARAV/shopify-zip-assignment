@@ -5,7 +5,7 @@
 [![Railway Deployment](https://img.shields.io/badge/deployed%20on-railway-blueviolet.svg)](https://railway.app/)
 [![Shopify Integration](https://img.shields.io/badge/integrated%20with-shopify-green.svg)](https://shopify.com/)
 
-A dynamic, location-based shipping and pricing engine tailored for [Sofabed](https://www.sofabed.com/) (originating heavy freight shipping from a central Texas warehouse). 
+A dynamic, location-based shipping and pricing engine tailored for [Sofabed](https://www.sofabed.com/) 
 
 This repository contains the backend Express pricing microservice and the Shopify Custom Liquid storefront integration script.
 
