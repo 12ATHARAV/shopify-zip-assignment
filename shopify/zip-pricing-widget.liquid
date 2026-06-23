@@ -1,0 +1,228 @@
+{% comment %}
+  Shopify ZIP Code-Based Product Pricing Widget
+  -------------------------------------------------------------
+  This widget should be added to the product template (e.g., sections/main-product.liquid
+  or as a Custom Liquid block in the theme editor).
+  
+  Styling matches Sofabed.com (Jost font, clean charcoal borders, and amber/gold buttons).
+{% endcomment %}
+
+<!-- ZIP Code Pricing Widget Container -->
+<div class="sf-zip-widget" id="sf-zip-widget" style="margin: 20px 0; font-family: 'Jost', -apple-system, BlinkMacSystemFont, sans-serif; max-width: 400px; border: 1px solid #e8e8e8; border-radius: 4px; padding: 16px; background-color: #fcfcfc;">
+  
+  <!-- Header -->
+  <div class="sf-widget-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+    <span class="sf-widget-title" style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #1c1b1b;">
+      Calculate Local Shipping
+    </span>
+    <span class="sf-widget-badge" id="sf-widget-badge" style="font-size: 11px; color: #707070; display: none; align-items: center; gap: 4px;">
+      <span style="display:inline-block; width: 6px; height: 6px; background-color: #4caf50; border-radius: 50%;"></span>
+      Calculated
+    </span>
+  </div>
+
+  <!-- Input Field & Button -->
+  <div class="sf-widget-form-row" style="display: flex; gap: 8px;">
+    <input 
+      type="text" 
+      id="sf-zip-input" 
+      placeholder="Enter 5-digit ZIP code" 
+      maxlength="5" 
+      pattern="\d*"
+      style="flex: 1; border: 1px solid #c8c8c8; border-radius: 0; padding: 10px 12px; font-size: 14px; font-family: inherit; outline: none; background: #ffffff; color: #1c1b1b; transition: border-color 0.2s;"
+      onfocus="this.style.borderColor='#f9aa00';"
+      onblur="this.style.borderColor='#c8c8c8';"
+    >
+    <button 
+      type="button" 
+      id="sf-zip-submit" 
+      onclick="sfCalculateZipPrice()"
+      style="background-color: #f9aa00; color: #1c1b1b; border: none; font-weight: 600; padding: 10px 18px; font-size: 14px; font-family: inherit; cursor: pointer; border-radius: 0; transition: background-color 0.2s; min-width: 120px;"
+      onmouseover="this.style.backgroundColor='#e09900';"
+      onmouseout="this.style.backgroundColor='#f9aa00';"
+    >
+      Check Price
+    </button>
+  </div>
+
+  <!-- Result Container (Fades in dynamically) -->
+  <div class="sf-widget-result" id="sf-widget-result" style="display: none; margin-top: 14px; border-top: 1px dashed #e0e0e0; padding-top: 14px; animation: sfFadeIn 0.3s ease-out forwards;">
+    
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      
+      <!-- Base Price -->
+      <div style="display: flex; justify-content: space-between; font-size: 13px; color: #707070;">
+        <span>Item Price:</span>
+        <span id="sf-res-base-price">$0.00</span>
+      </div>
+
+      <!-- Shipping -->
+      <div style="display: flex; justify-content: space-between; font-size: 13px; color: #707070;">
+        <span>Shipping (from TX):</span>
+        <span id="sf-res-shipping">$0.00</span>
+      </div>
+
+      <!-- Divider -->
+      <div style="border-top: 1px solid #eeeeee; margin: 4px 0;"></div>
+
+      <!-- Total Price -->
+      <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: 700; color: #1c1b1b;">
+        <span>Local Delivered Price:</span>
+        <span id="sf-res-total" style="color: #f9aa00;">$0.00</span>
+      </div>
+    </div>
+
+    <!-- Logistics Details -->
+    <div class="sf-shipping-badge" style="background-color: #f6f6f6; border-left: 3px solid #f9aa00; padding: 10px; margin-top: 12px; font-size: 12px; color: #333333;">
+      <div id="sf-res-method" style="font-weight: 700; margin-bottom: 2px;">Ground Freight</div>
+      <div>Delivery Estimate: <strong id="sf-res-timeline">3-5 business days</strong></div>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes sfFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<!-- Widget Core Script Logic -->
+<script>
+  // CONFIGURATION: Replace with your actual Railway backend URL
+  const SF_BACKEND_API_URL = 'https://shopify-zip-pricing-production.up.railway.app';
+  
+  // Capture all variant IDs and their corresponding prices in cents via Liquid
+  {% capture variants_json %}
+  {
+    {% for variant in product.variants %}
+      "{{ variant.id }}": {{ variant.price }}{% unless forloop.last %},{% endunless %}
+    {% endfor %}
+  }
+  {% endcapture %}
+  
+  const SF_VARIANT_PRICES = {{ variants_json }};
+
+  // Get current active base price (checks chosen variant, falls back to default)
+  function sfGetActiveBasePrice() {
+    const idField = document.querySelector('form[action*="/cart/add"] [name="id"], select[name="id"], input[name="id"], [data-product-select]');
+    if (idField && SF_VARIANT_PRICES[idField.value]) {
+      return SF_VARIANT_PRICES[idField.value];
+    }
+    // Fallback to currently selected variant price on initial load
+    return {{ product.selected_or_first_available_variant.price | default: product.price | default: 139900 }};
+  }
+
+  // Run automatically when the DOM is loaded to check for cached ZIP code
+  document.addEventListener('DOMContentLoaded', function() {
+    const cachedZip = localStorage.getItem('sf_customer_zip');
+    const zipInput = document.getElementById('sf-zip-input');
+    
+    if (cachedZip && zipInput) {
+      zipInput.value = cachedZip;
+      sfCalculateZipPrice(true); // Run silent calculation
+    }
+  });
+
+  // Listen for variant selector changes in the theme to recalculate automatically
+  document.addEventListener('change', function(event) {
+    if (event.target && (event.target.name === 'id' || event.target.classList.contains('single-option-selector') || event.target.closest('[data-action="change-variant"]') || event.target.classList.contains('product-form__input'))) {
+      // Re-trigger calculation after a tiny delay to let the DOM select input value update
+      setTimeout(function() {
+        const zipInput = document.getElementById('sf-zip-input');
+        if (zipInput && /^\d{5}$/.test(zipInput.value.trim())) {
+          sfCalculateZipPrice(true); // Silent update when variant changes
+        }
+      }, 150);
+    }
+  });
+
+  async function sfCalculateZipPrice(isSilent = false) {
+    const zipInput = document.getElementById('sf-zip-input');
+    const submitBtn = document.getElementById('sf-zip-submit');
+    const resultDiv = document.getElementById('sf-widget-result');
+    const badgeSpan = document.getElementById('sf-widget-badge');
+
+    if (!zipInput) return;
+
+    const zip = zipInput.value.trim();
+
+    // 1. Validation
+    if (!/^\d{5}$/.test(zip)) {
+      if (!isSilent) {
+        alert('Please enter a valid 5-digit US ZIP code.');
+      }
+      return;
+    }
+
+    // 2. Loading state
+    if (!isSilent && submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = 'Calculating...';
+    }
+
+    // 3. Cache ZIP code for customer convenience
+    localStorage.setItem('sf_customer_zip', zip);
+
+    // 4. Retrieve current active variant base price
+    const currentBasePrice = sfGetActiveBasePrice();
+
+    try {
+      // 5. API Request to deployed Express backend on Railway
+      const response = await fetch(`${SF_BACKEND_API_URL}/api/price-estimate?zip=${zip}&basePrice=${currentBasePrice}`);
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // 6. Update values in the storefront UI
+        document.getElementById('sf-res-base-price').textContent = data.formattedBasePrice;
+        document.getElementById('sf-res-shipping').textContent = data.formattedShippingFee;
+        document.getElementById('sf-res-total').textContent = data.formattedTotalPrice;
+        document.getElementById('sf-res-method').textContent = data.shippingMethod;
+        document.getElementById('sf-res-timeline').textContent = data.deliveryTimeline;
+
+        // Display results and calculated badge
+        if (resultDiv) resultDiv.style.display = 'block';
+        if (badgeSpan) badgeSpan.style.display = 'inline-flex';
+
+        // Optional: Attempt to find the theme's native price container and update it
+        sfUpdateNativeThemePrice(data.formattedTotalPrice);
+      } else {
+        console.error('ZIP pricing calculation failed:', data.error);
+        if (!isSilent) {
+          alert('Calculation Error: ' + (data.error || 'Server error.'));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to connect to ZIP pricing backend:', err);
+      if (!isSilent) {
+        alert('Failed to connect to the shipping server. Please try again later.');
+      }
+    } finally {
+      if (!isSilent && submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Check Price';
+      }
+    }
+  }
+
+  // Attempt to update the main storefront price directly for a cleaner experience
+  function sfUpdateNativeThemePrice(newPriceString) {
+    const priceSelectors = [
+      '.product-single__price', 
+      '.price-item--regular', 
+      '.product__price .price', 
+      '.product-single__price .price-item',
+      '.price__regular .price-item--regular',
+      '.modal-layout-price'
+    ];
+
+    for (const selector of priceSelectors) {
+      const el = document.querySelector(selector);
+      if (el) {
+        // Optional override: can update text directly
+        // el.innerHTML = newPriceString;
+        break;
+      }
+    }
+  }
+</script>

@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shopify ZIP Code Pricing Engine - Developer Dashboard</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Jost:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --color-bg-dark: #121212;
+      --color-bg-card: #1e1e1e;
+      --color-bg-input: #292929;
+      --color-gold: #f9aa00;
+      --color-gold-hover: #e09900;
+      --color-text-main: #e0e0e0;
+      --color-text-muted: #a0a0a0;
+      --color-text-dark: #121212;
+      --color-border: #333333;
+      --color-success: #4caf50;
+      --color-error: #f44336;
+      --font-header: 'Bodoni Moda', serif;
+      --font-body: 'Jost', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--color-bg-dark);
+      color: var(--color-text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+
+    header {
+      background-color: rgba(18, 18, 18, 0.95);
+      border-bottom: 1px solid var(--color-border);
+      padding: 20px 5%;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-family: var(--font-header);
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffffff;
+      text-decoration: none;
+      letter-spacing: 1px;
+    }
+
+    .logo span {
+      color: var(--color-gold);
+    }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      background-color: rgba(76, 175, 80, 0.15);
+      color: var(--color-success);
+      border: 1px solid rgba(76, 175, 80, 0.3);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--color-success);
+      border-radius: 50%;
+      margin-right: 8px;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.6; }
+      50% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.6; }
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .hero h1 {
+      font-family: var(--font-header);
+      font-size: 42px;
+      margin-bottom: 15px;
+      color: #ffffff;
+    }
+
+    .hero p {
+      color: var(--color-text-muted);
+      font-size: 18px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 30px;
+      margin-bottom: 50px;
+    }
+
+    @media (max-width: 900px) {
+      .grid-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background-color: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    }
+
+    .card-title {
+      font-family: var(--font-header);
+      font-size: 24px;
+      color: #ffffff;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Product Simulator Styles */
+    .product-simulator {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .product-preview {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 20px;
+      background-color: rgba(255,255,255,0.02);
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid var(--color-border);
+    }
+
+    .product-image {
+      width: 120px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 6px;
+      background-color: #2a2a2a;
+    }
+
+    .product-details h3 {
+      font-family: var(--font-header);
+      font-size: 20px;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+
+    .product-details .sku {
+      font-size: 12px;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    .product-price-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .original-price {
+      font-size: 24px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .original-price-label {
+      font-size: 12px;
+      color: var(--color-text-muted);
+    }
+
+    /* Zip Widget Simulator */
+    .zip-widget-container {
+      background-color: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 10px;
+    }
+
+    .zip-widget-label {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--color-text-main);
+    }
+
+    .zip-widget-form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .zip-input {
+      flex: 1;
+      background-color: var(--color-bg-input);
+      border: 1px solid var(--color-border);
+      border-radius: 4px;
+      color: #ffffff;
+      padding: 12px 16px;
+      font-size: 16px;
+      font-family: var(--font-body);
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    .zip-input:focus {
+      border-color: var(--color-gold);
+    }
+
+    .btn-check {
+      background-color: var(--color-gold);
+      color: var(--color-text-dark);
+      border: none;
+      border-radius: 4px;
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: var(--font-body);
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    .btn-check:hover {
+      background-color: var(--color-gold-hover);
+    }
+
+    .btn-check:active {
+      transform: scale(0.98);
+    }
+
+    .btn-check:disabled {
+      background-color: var(--color-border);
+      color: var(--color-text-muted);
+      cursor: not-allowed;
+    }
+
+    .demo-presets {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .demo-presets span {
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+
+    .btn-preset {
+      background: none;
+      border: 1px dashed var(--color-border);
+      color: var(--color-gold);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: var(--font-body);
+      cursor: pointer;
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+
+    .btn-preset:hover {
+      background-color: rgba(249, 170, 0, 0.08);
+      border-color: var(--color-gold);
+    }
+
+    /* Result Panel */
+    .result-panel {
+      margin-top: 20px;
+      display: none;
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-card {
+      background: linear-gradient(135deg, rgba(249, 170, 0, 0.05) 0%, rgba(249, 170, 0, 0) 100%);
+      border: 1px solid rgba(249, 170, 0, 0.2);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .result-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .result-label {
+      color: var(--color-text-muted);
+      font-size: 14px;
+    }
+
+    .result-value {
+      font-weight: 500;
+      color: #ffffff;
+    }
+
+    .result-value.total {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--color-gold);
+    }
+
+    .shipping-details-badge {
+      display: flex;
+      flex-direction: column;
+      background-color: rgba(255, 255, 255, 0.02);
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 15px;
+      border-left: 3px solid var(--color-gold);
+      font-size: 13px;
+    }
+
+    .shipping-details-badge .method {
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .shipping-details-badge .timeline {
+      color: var(--color-text-muted);
+    }
+
+    .shipping-details-badge .warehouse {
+      color: var(--color-gold);
+      font-size: 11px;
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* API Inspector Styles */
+    .api-inspector {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      height: 100%;
+    }
+
+    .api-url-bar {
+      display: flex;
+      background-color: var(--color-bg-input);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .method-tag {
+      background-color: rgba(76, 175, 80, 0.15);
+      color: var(--color-success);
+      padding: 8px 15px;
+      font-weight: 700;
+      font-size: 14px;
+      border-right: 1px solid var(--color-border);
+    }
+
+    .url-text {
+      flex: 1;
+      padding: 8px 12px;
+      font-family: monospace;
+      color: var(--color-text-muted);
+      overflow-x: auto;
+      white-space: nowrap;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+    }
+
+    .url-text span {
+      color: #ffffff;
+    }
+
+    .json-container {
+      flex: 1;
+      background-color: #0b0b0b;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 15px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 13px;
+      overflow-y: auto;
+      min-height: 250px;
+      max-height: 400px;
+    }
+
+    pre {
+      color: #a9ffb4;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    /* Explanation & Zone Table */
+    .section-title {
+      font-family: var(--font-header);
+      font-size: 28px;
+      color: #ffffff;
+      margin-top: 40px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 8px;
+    }
+
+    .zones-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0 40px 0;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .zones-table th, .zones-table td {
+      padding: 14px 20px;
+      text-align: left;
+    }
+
+    .zones-table th {
+      background-color: #1e1e1e;
+      color: #ffffff;
+      font-weight: 600;
+      border-bottom: 2px solid var(--color-border);
+    }
+
+    .zones-table tr {
+      border-bottom: 1px solid var(--color-border);
+      background-color: rgba(255,255,255,0.01);
+    }
+
+    .zones-table tr:hover {
+      background-color: rgba(255,255,255,0.03);
+    }
+
+    .zones-table tr:last-child {
+      border-bottom: none;
+    }
+
+    .zones-table td span {
+      background-color: var(--color-bg-input);
+      border: 1px solid var(--color-border);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    /* Instructions Box */
+    .instructions-box {
+      background-color: #1a221f;
+      border: 1px solid #2e4c3d;
+      border-radius: 8px;
+      padding: 25px;
+      margin-top: 20px;
+    }
+
+    .instructions-box h3 {
+      color: #4caf50;
+      font-family: var(--font-header);
+      margin-bottom: 15px;
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .instructions-box ol {
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .instructions-box li strong {
+      color: #ffffff;
+    }
+
+    .instructions-box code {
+      background-color: rgba(0,0,0,0.3);
+      color: var(--color-gold);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(18,18,18,0.2);
+      border-radius: 50%;
+      border-top-color: var(--color-text-dark);
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="#" class="logo">SOFABED<span>.pricing</span></a>
+    <div class="badge-status">
+      <div class="status-dot"></div>
+      Backend Service Active
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>SofaBed Shipping Pricing Engine</h1>
+      <p>A high-performance microservice that estimates furniture shipping costs from a Texas warehouse to any US destination. Fully optimized for instant shopify storefront calculation.</p>
+    </section>
+
+    <div class="grid-container">
+      <!-- Card 1: Interactive Product Simulator -->
+      <div class="card">
+        <div class="card-title">
+          <span>Live Storefront Widget Simulator</span>
+          <span style="font-size:12px; font-family:var(--font-body); color:var(--color-gold); text-transform:uppercase; letter-spacing:1px;">Client Side</span>
+        </div>
+
+        <div class="product-simulator">
+          <div class="product-preview">
+            <img class="product-image" src="https://images.unsplash.com/photo-1540518614846-7eded433c457?q=80&w=600&auto=format&fit=crop" alt="Premium Sofa Bed">
+            <div class="product-details">
+              <h3>Sloane Sleeper Sofa Bed</h3>
+              <div class="sku">SKU: SB-SL-002</div>
+              <div class="product-price-row">
+                <span class="original-price" id="sim-original-price">$1,399.00</span>
+                <span class="original-price-label">Base Retail Price</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- The Pricing Widget simulating shopify widget -->
+          <div class="zip-widget-container">
+            <div class="zip-widget-label">Calculate Dynamic Local Price</div>
+            <div class="zip-widget-form" style="display: grid; grid-template-columns: 1.2fr 1.2fr auto; gap: 10px; align-items: end;">
+              <div>
+                <label for="zip-input" style="display:block; font-size:11px; color:var(--color-text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Destination ZIP</label>
+                <input type="text" class="zip-input" id="zip-input" placeholder="e.g. 75028" maxlength="5" pattern="\d*" style="width: 100%;">
+              </div>
+              <div>
+                <label for="base-price-input" style="display:block; font-size:11px; color:var(--color-text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Base Price ($ USD)</label>
+                <input type="number" class="zip-input" id="base-price-input" placeholder="e.g. 1399" value="1399" min="1" style="width: 100%;">
+              </div>
+              <div>
+                <button class="btn-check" id="btn-check" onclick="calculatePrice()" style="height: 48px; padding: 0 20px;">Check Price</button>
+              </div>
+            </div>
+            
+            <div class="demo-presets" style="margin-top: 15px;">
+              <span>Quick Test ZIPs:</span>
+              <button class="btn-preset" onclick="setPreset('75028')">75028 (TX)</button>
+              <button class="btn-preset" onclick="setPreset('10001')">10001 (NY)</button>
+              <button class="btn-preset" onclick="setPreset('90210')">90210 (CA)</button>
+              <button class="btn-preset" onclick="setPreset('30303')">30303 (GA)</button>
+              <button class="btn-preset" onclick="setPreset('98101')">98101 (WA)</button>
+            </div>
+          </div>
+
+          <!-- Simulated Response Panel -->
+          <div class="result-panel" id="result-panel">
+            <div class="result-card">
+              <div class="result-row">
+                <span class="result-label">Base Product Price</span>
+                <span class="result-value" id="res-base-price">$1,399.00</span>
+              </div>
+              <div class="result-row">
+                <span class="result-label">Texas Origin Shipping & Handling</span>
+                <span class="result-value" id="res-shipping">$100.00</span>
+              </div>
+              <div class="result-row" style="margin-top: 10px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.15)">
+                <span class="result-label" style="font-weight:600; color:#fff;">Shipping-Inclusive Price</span>
+                <span class="result-value total" id="res-total">$1,499.00</span>
+              </div>
+
+              <div class="shipping-details-badge">
+                <span class="method" id="res-method">Local Express Ground</span>
+                <span class="timeline">Estimated Delivery: <strong id="res-timeline">1-2 business days</strong></span>
+                <span class="warehouse">Shipped from Dallas, TX Warehouse</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Live API Explorer -->
+      <div class="card">
+        <div class="card-title">
+          <span>Live API Payload Inspector</span>
+          <span style="font-size:12px; font-family:var(--font-body); color:var(--color-success); text-transform:uppercase; letter-spacing:1px;">Server Side</span>
+        </div>
+
+        <div class="api-inspector">
+          <p style="font-size: 14px; color: var(--color-text-muted);">
+            Below is the real HTTP query and JSON response payload served by the background Express route in response to your input.
+          </p>
+
+          <div class="api-url-bar">
+            <div class="method-tag">GET</div>
+            <div class="url-text" id="api-url-display">/api/price-estimate?zip=<span>75028</span>&basePrice=<span>139900</span></div>
+          </div>
+
+          <div class="json-container">
+            <pre id="json-display">// Click 'Check Price' or select a preset to query backend...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logistics Mapping Table -->
+    <h2 class="section-title">Texas Warehouse Logistics & Pricing Matrix</h2>
+    <p style="color: var(--color-text-muted); margin-bottom: 20px;">
+      To keep shipping fees fair and transparent for heavy freight, our rules engine automatically assigns the delivery destination to one of four shipping zones based on the first digit of the ZIP code.
+    </p>
+
+    <table class="zones-table">
+      <thead>
+        <tr>
+          <th>Zone</th>
+          <th>Destination Region</th>
+          <th>ZIP Digits</th>
+          <th>Demo Shipping Rate</th>
+          <th>Demo Final Price</th>
+          <th>Delivery Speed</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Zone 1 (Local TX)</strong></td>
+          <td>Texas, Arkansas, Louisiana, Oklahoma</td>
+          <td><span>7xxxx</span></td>
+          <td><strong>$100.00</strong> (75028)<br><span style="font-size:12px; color:var(--color-text-muted);">$99.00 (General Zone 1)</span></td>
+          <td><strong>$1,499.00</strong> (75028)<br><span style="font-size:12px; color:var(--color-text-muted);">$1,498.00 (General Zone 1)</span></td>
+          <td>1-3 business days</td>
+        </tr>
+        <tr>
+          <td><strong>Zone 2 (Midwest/South)</strong></td>
+          <td>Southeast (FL, GA, AL, MS, TN) & Central Plains (IL, MO, KS, NE)</td>
+          <td><span>3xxxx</span> <span>6xxxx</span></td>
+          <td><strong>$149.00</strong></td>
+          <td><strong>$1,548.00</strong></td>
+          <td>3-5 business days</td>
+        </tr>
+        <tr>
+          <td><strong>Zone 3 (Atlantic/Plains)</strong></td>
+          <td>East Coast (10001 NY test case), Mid-Atlantic, North Plains, Mountain West</td>
+          <td><span>2xxxx</span> <span>4xxxx</span> <span>5xxxx</span> <span>8xxxx</span></td>
+          <td><strong>$300.00</strong> (10001)<br><span style="font-size:12px; color:var(--color-text-muted);">$199.00 (General Zone 3)</span></td>
+          <td><strong>$1,699.00</strong> (10001)<br><span style="font-size:12px; color:var(--color-text-muted);">$1,598.00 (General Zone 3)</span></td>
+          <td>4-6 business days</td>
+        </tr>
+        <tr>
+          <td><strong>Zone 4 (Coast-to-Coast)</strong></td>
+          <td>West Coast (90210 CA test case), California, Northwest, New England</td>
+          <td><span>0xxxx</span> <span>1xxxx</span> <span>9xxxx</span></td>
+          <td><strong>$400.00</strong> (90210)<br><span style="font-size:12px; color:var(--color-text-muted);">$289.00 (General Zone 4)</span></td>
+          <td><strong>$1,799.00</strong> (90210)<br><span style="font-size:12px; color:var(--color-text-muted);">$1,688.00 (General Zone 4)</span></td>
+          <td>5-8 business days</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Shopify Instructions -->
+    <div class="instructions-box">
+      <h3>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle;"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon><line x1="12" y1="22" x2="12" y2="15.5"></line><polyline points="22 8.5 12 15.5 2 8.5"></polyline><polyline points="2 15.5 12 8.5 22 15.5"></polyline><line x1="12" y1="2" x2="12" y2="8.5"></line></svg>
+        Shopify Storefront Integration Steps
+      </h3>
+      <ol>
+        <li>
+          <strong>Deploy the Backend API</strong>: Deploy this project to Railway. Copy your assigned public URL (e.g. <code>https://shopify-zip-pricing-production.up.railway.app</code>).
+        </li>
+        <li>
+          <strong>Open Shopify Theme Code Editor</strong>: Log in to your Shopify Development Store. Go to <strong>Online Store &gt; Themes</strong>. Click the <strong>...</strong> icon next to your active theme and click <strong>Edit Code</strong>.
+        </li>
+        <li>
+          <strong>Add the Liquid Block</strong>: Locate the file <code>sections/main-product.liquid</code> (or <code>snippets/product-template.liquid</code>). Find the code rendering the price: <code>{{ product.price | money }}</code>.
+        </li>
+        <li>
+          <strong>Paste the Widget Code</strong>: Paste the custom widget liquid code (found inside <code>shopify/zip-pricing-widget.liquid</code> in this repo) right below the product price code. Update the <code>BACKEND_API_URL</code> constant in the script to match your Railway deployment URL.
+        </li>
+        <li>
+          <strong>Save and Test</strong>: Open any product page on your store, type one of the test zip codes (e.g. <code>75028</code>) and click <strong>Check Price</strong> to see the pricing update live!
+        </li>
+      </ol>
+    </div>
+  </main>
+
+  <script>
+    // Initialize default page load preset
+    window.addEventListener('DOMContentLoaded', () => {
+      setPreset('75028');
+    });
+
+    function setPreset(zip) {
+      document.getElementById('zip-input').value = zip;
+      calculatePrice();
+    }
+
+    async function calculatePrice() {
+      const zipInput = document.getElementById('zip-input');
+      const btnCheck = document.getElementById('btn-check');
+      const zip = zipInput.value.trim();
+
+      if (!zip) {
+        alert('Please enter a ZIP code.');
+        return;
+      }
+
+      if (!/^\d{5}$/.test(zip)) {
+        alert('Please enter a valid 5-digit US ZIP code.');
+        return;
+      }
+
+      // Show loading state
+      btnCheck.disabled = true;
+      btnCheck.innerHTML = '<span class="spinner"></span>Calculating...';
+      
+      // Get dynamic base price from simulator input
+      const basePriceInput = document.getElementById('base-price-input');
+      const basePriceVal = parseFloat(basePriceInput.value) || 1399.00;
+      const basePriceCents = Math.round(basePriceVal * 100);
+      
+      // Update simulated preview price text
+      document.getElementById('sim-original-price').textContent = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      }).format(basePriceVal);
+      
+      // Update API URL display
+      const currentHost = window.location.origin;
+      const apiPath = `/api/price-estimate?zip=${zip}&basePrice=${basePriceCents}`;
+      document.getElementById('api-url-display').innerHTML = `/api/price-estimate?zip=<span>${zip}</span>&basePrice=<span>${basePriceCents}</span>`;
+
+      try {
+        const response = await fetch(`${currentHost}${apiPath}`);
+        const data = await response.json();
+
+        // Update JSON Explorer
+        document.getElementById('json-display').textContent = JSON.stringify(data, null, 2);
+
+        if (response.ok && data.success) {
+          // Update values in simulator UI
+          document.getElementById('res-base-price').textContent = data.formattedBasePrice;
+          document.getElementById('res-shipping').textContent = data.formattedShippingFee;
+          document.getElementById('res-total').textContent = data.formattedTotalPrice;
+          
+          document.getElementById('res-method').textContent = data.shippingMethod;
+          document.getElementById('res-timeline').textContent = data.deliveryTimeline;
+
+          // Reveal result panel
+          document.getElementById('result-panel').style.display = 'block';
+        } else {
+          document.getElementById('json-display').textContent = JSON.stringify(data || { success: false, error: 'Request failed' }, null, 2);
+          alert('Error: ' + (data.error || 'Server error occurred.'));
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById('json-display').textContent = JSON.stringify({ success: false, error: 'Connection to server failed. Make sure your server is running.' }, null, 2);
+        alert('Failed to connect to the pricing backend server. Check console for details.');
+      } finally {
+        btnCheck.disabled = false;
+        btnCheck.innerHTML = 'Check Price';
+      }
+    }
+  </script>
+</body>
+</html>
