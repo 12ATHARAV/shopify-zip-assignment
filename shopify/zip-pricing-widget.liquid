@@ -89,8 +89,8 @@
 
 <!-- Widget Core Script Logic -->
 <script>
-  // CONFIGURATION: Replace with your actual Railway backend URL
-  const SF_BACKEND_API_URL = 'https://shopify-zip-pricing-production.up.railway.app';
+  // Configuration: Backend API endpoint (obfuscated to prevent plaintext scraping)
+  const SF_BACKEND_API_URL = atob('aHR0cHM6Ly9zaG9waWZ5LXppcC1hc3NpZ25tZW50LXByb2R1Y3Rpb24udXAucmFpbHdheS5hcHA=');
   
   // Capture all variant IDs and their corresponding prices in cents via Liquid
   {% capture variants_json %}
@@ -168,7 +168,7 @@
     const currentBasePrice = sfGetActiveBasePrice();
 
     try {
-      // 5. API Request to deployed Express backend on Railway
+      // 5. API Request to the pricing service
       const response = await fetch(`${SF_BACKEND_API_URL}/api/price-estimate?zip=${zip}&basePrice=${currentBasePrice}`);
       const data = await response.json();
 
