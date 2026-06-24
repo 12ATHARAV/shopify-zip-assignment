@@ -72,45 +72,31 @@ function getPriceEstimate(zip, basePriceCents = 139900) {
 
     switch (firstDigit) {
       case '7': // South Central (TX, AR, LA, OK) - Local Zone
-        shippingFee = 9900; // $99.00
+      case '3': // Southeast (AL, FL, GA, MS, TN)
+      case '6': // Central Plains (IL, KS, NE, MO)
+        shippingFee = 10000; // $100.00
         deliveryDaysMin = 1;
         deliveryDaysMax = 3;
         shippingMethod = 'Regional Ground Shipping';
-        note = 'Short-distance shipping from our Texas hub';
-        break;
-
-      case '3': // Southeast (AL, FL, GA, MS, TN)
-      case '6': // Central Plains (IL, KS, NE, MO)
-        shippingFee = 14900; // $149.00
-        deliveryDaysMin = 3;
-        deliveryDaysMax = 5;
-        shippingMethod = 'Midwest & Southeast Freight';
-        note = 'Medium-distance shipping from our Texas hub';
+        note = 'Shipping from our Texas hub';
         break;
 
       case '2': // South Atlantic (DC, MD, NC, SC, VA, WV)
       case '4': // Great Lakes / Midwest (IN, KY, MI, OH)
       case '5': // Northern Plains (IA, MN, MT, ND, SD, WI)
       case '8': // Mountain West (AZ, CO, ID, NM, NV, UT, WY)
-        shippingFee = 19900; // $199.00
+      case '0': // New England (CT, MA, ME, NH, RI, VT, NJ)
+      case '1': // Mid-Atlantic (NY, PA, DE) (non-10001)
+      case '9': // West Coast (AK, CA, HI, OR, WA) (non-90210)
+        shippingFee = 30000; // $300.00
         deliveryDaysMin = 4;
         deliveryDaysMax = 6;
         shippingMethod = 'Standard Freight Carrier';
         note = 'Long-distance shipping from our Texas hub';
         break;
 
-      case '0': // New England (CT, MA, ME, NH, RI, VT, NJ)
-      case '1': // Mid-Atlantic (NY, PA, DE) (non-10001)
-      case '9': // West Coast (AK, CA, HI, OR, WA) (non-90210)
-        shippingFee = 28900; // $289.00
-        deliveryDaysMin = 5;
-        deliveryDaysMax = 8;
-        shippingMethod = 'Cross-Country Freight';
-        note = 'Premium long-distance shipping from our Texas hub';
-        break;
-
       default:
-        shippingFee = 25000; // $250.00 flat rate fallback
+        shippingFee = 30000; // $300.00 flat rate fallback
         deliveryDaysMin = 4;
         deliveryDaysMax = 7;
         shippingMethod = 'Standard Freight Carrier';
