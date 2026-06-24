@@ -4,9 +4,24 @@
     "target": "cart.validations.generate.run",
     "input": {
       "cart": {
+        "deliveryGroups": [
+          {
+            "deliveryAddress": {
+              "zip": "75028",
+              "address1": "123 Main St"
+            }
+          }
+        ],
         "lines": [
           {
-            "quantity": 3
+            "quantity": 1,
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/11111111",
+              "product": {
+                "title": "Sloane Sofa Bed"
+              }
+            }
           }
         ]
       }
@@ -17,7 +32,7 @@
           "validationAdd": {
             "errors": [
               {
-                "message": "Not possible to order more than one of each",
+                "message": "Shipping fee is required. Please go back to the cart or product page and calculate shipping for ZIP code 75028.",
                 "target": "$.cart"
               }
             ]

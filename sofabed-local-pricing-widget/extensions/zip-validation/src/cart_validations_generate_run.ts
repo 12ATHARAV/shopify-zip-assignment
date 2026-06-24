@@ -11,9 +11,10 @@ export function cartValidationsGenerateRun(input: CartValidationsGenerateRunInpu
   // If deliveryGroups is present, extract zip code from the first group's address
   const deliveryGroup = input.cart.deliveryGroups?.[0];
   const zip = deliveryGroup?.deliveryAddress?.zip?.trim();
+  const address1 = deliveryGroup?.deliveryAddress?.address1?.trim();
 
-  // If there is no shipping ZIP code entered yet, we don't validate (customer has not entered their address)
-  if (!zip) {
+  // If there is no shipping ZIP code or street address entered yet, we don't validate (customer is not in checkout information stage)
+  if (!zip || !address1) {
     return { operations: [] };
   }
 

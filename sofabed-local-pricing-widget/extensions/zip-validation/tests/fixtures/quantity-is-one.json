@@ -4,27 +4,40 @@
     "target": "cart.validations.generate.run",
     "input": {
       "cart": {
+        "deliveryGroups": [
+          {
+            "deliveryAddress": {
+              "zip": "75028",
+              "address1": "123 Main St"
+            }
+          }
+        ],
         "lines": [
           {
-            "quantity": 1
+            "quantity": 1,
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/11111111",
+              "product": {
+                "title": "Sloane Sofa Bed"
+              }
+            }
           },
           {
-            "quantity": 1
-          },
-          {
-            "quantity": 1
+            "quantity": 1,
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/47998567186619",
+              "product": {
+                "title": "$100.00 Shipping Fee"
+              }
+            }
           }
         ]
       }
     },
     "output": {
-      "operations": [
-        {
-          "validationAdd": {
-            "errors": []
-          }
-        }
-      ]
+      "operations": []
     }
   }
 }

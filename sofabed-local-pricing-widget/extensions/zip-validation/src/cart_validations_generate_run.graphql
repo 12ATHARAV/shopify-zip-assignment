@@ -3,6 +3,7 @@ query CartValidationsGenerateRunInput {
     deliveryGroups {
       deliveryAddress {
         zip
+        address1
       }
     }
     lines {
