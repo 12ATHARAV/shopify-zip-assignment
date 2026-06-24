@@ -42,6 +42,9 @@ To demonstrate a production-ready e-commerce integration, this solution goes bey
 *   **Customer Session Persistence (`localStorage`)**: Once a customer enters their ZIP code, it is stored in the browser's local storage. When they browse other products, local pricing calculations run automatically to minimize shopper friction.
 *   **Zero Floating-Point Error Calculations**: All currency numbers are calculated in integer **cents** in the backend (e.g. $1399.00 is handled as `139900`) to completely eliminate decimal rounding errors common in javascript floating-point arithmetic.
 *   **Interactive Developer Dashboard**: Opening the backend URL in a browser loads a dark-mode dashboard showing a product simulator, interactive preset buttons, and a live JSON inspector, allowing rapid manual testing without setting up Shopify first.
+*   **Shopify Checkout ZIP Pre-population**: Redirects checkout requests using a secure Cart Permalink workflow combined with `/cart/prepare_shipping_rates.json` session caching. This automatically pre-populates the customer's calculated ZIP code on the Shopify delivery address page.
+*   **Plan-Independent Shipping Total Lock**: Bypasses standard Shopify plan limitations (which restrict the `CarrierService` API to Shopify Plus/annual accounts) by dynamically syncing calculations to unlisted merchant shipping variants. Quantity locks ensure customers cannot buy multiples or end up with duplicate shipping fees.
+*   **Server-Side Checkout Validation Function**: Enforces strict server-side matching of the customer's ZIP code to their cart's shipping variant during the checkout flow using a Shopify Cart Validation Function (Wasm). If a customer changes their delivery address to a different zone, checkout progress is immediately blocked, preventing billing exploits.
 
 ---
 
