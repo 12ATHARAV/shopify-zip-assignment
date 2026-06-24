@@ -72,6 +72,20 @@
         // Cache shipping fee in cents for cart checkout sync
         localStorage.setItem('sf_shipping_fee_cents', data.shippingFeeCents);
 
+        // If cart has items, sync shipping variant immediately
+        try {
+          const shippingVariantId = sfGetClosestShippingVariant(data.shippingFeeCents);
+          if (shippingVariantId) {
+            const cartRes = await fetch('/cart.js');
+            const cart = await cartRes.json();
+            if (cart && cart.items && cart.items.length > 0) {
+              await sfAddShippingToCart(shippingVariantId);
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to sync shipping variant on price calculation:', e);
+        }
+
         // Silently prepare shipping rates in session to pre-fill ZIP code at checkout
         try {
           const province = sfGetStateFromZip(zip);
@@ -412,6 +426,67 @@
     }, true); // Use event capturing to run before theme scripts!
   }
 
+  // Intercept Add to Cart to add both product and shipping variant
+  function sfSetupAddToCartInterceptor() {
+    document.addEventListener('submit', async function(event) {
+      const form = event.target;
+      const action = form.getAttribute('action') || '';
+      
+      if (action.includes('/cart/add')) {
+        const cachedZip = localStorage.getItem('sf_customer_zip');
+        const shippingFee = localStorage.getItem('sf_shipping_fee_cents');
+        const shippingVariantId = sfGetClosestShippingVariant(shippingFee);
+
+        if (!cachedZip || !shippingVariantId) {
+          return; // Let default add-to-cart happen
+        }
+
+        // Prevent theme default ajax
+        event.preventDefault();
+        event.stopPropagation();
+
+        const submitBtn = form.querySelector('[type="submit"], .product-form__submit');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.dataset.originalText = submitBtn.innerHTML;
+          submitBtn.innerHTML = 'Adding to cart...';
+        }
+
+        try {
+          const variantIdInput = form.querySelector('[name="id"]');
+          const variantId = variantIdInput ? variantIdInput.value : null;
+
+          if (!variantId) {
+            form.submit();
+            return;
+          }
+
+          // Add both variants
+          const response = await fetch('/cart/add.js', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              items: [
+                { id: parseInt(variantId), quantity: 1 },
+                { id: parseInt(shippingVariantId), quantity: 1 }
+              ]
+            })
+          });
+
+          if (response.ok) {
+            // Redirect to cart to show updated items and subtotal
+            window.location.href = '/cart';
+          } else {
+            form.submit();
+          }
+        } catch (err) {
+          console.error('Failed to intercept add-to-cart:', err);
+          form.submit();
+        }
+      }
+    }, true); // Use capturing phase to run before theme scripts!
+  }
+
   // Export functions to global window object so click handlers work
   window.sfCalculateZipPrice = sfCalculateZipPrice;
   window.sfGetActiveBasePrice = sfGetActiveBasePrice;
@@ -427,6 +502,7 @@
     }
 
     sfSetupCheckoutInterceptor();
+    sfSetupAddToCartInterceptor();
   });
 
   // Listen for variant selector changes in the theme to recalculate automatically
