@@ -104,6 +104,69 @@ app.get('/api/price-estimate', verifyReferer, (req, res) => {
   return res.json(result);
 });
 
+// Parse JSON body for incoming POST webhooks
+app.use(express.json());
+
+/**
+ * @api {post} /api/shipping-rates Get Carrier Service Shipping Rates
+ * @apiDescription Calculates shipping rates for Shopify Checkout matching our pricing rules
+ */
+app.post('/api/shipping-rates', (req, res) => {
+  const { token } = req.query;
+  const EXPECTED_TOKEN = process.env.CARRIER_TOKEN || 'sofabed_secret_token_2026';
+  
+  if (token !== EXPECTED_TOKEN) {
+    console.log(`[Carrier Service Webhook] Unauthorized attempt with token: ${token || 'none'}`);
+    return res.status(403).json({ error: 'Unauthorized carrier callback token.' });
+  }
+
+  const rateRequest = req.body.rate;
+  if (!rateRequest || !rateRequest.destination) {
+    return res.status(400).json({ error: 'Invalid payload. Missing destination.' });
+  }
+
+  const destination = rateRequest.destination;
+  const zip = destination.postal_code;
+
+  if (!zip) {
+    return res.status(400).json({ error: 'Missing destination postal code.' });
+  }
+
+  console.log(`[Carrier Service Webhook] Received request for ZIP: ${zip}`);
+
+  // Retrieve base price in cents from checkout items list (use first item or default)
+  let cartBasePriceCents = 139900;
+  if (rateRequest.items && rateRequest.items.length > 0) {
+    cartBasePriceCents = rateRequest.items[0].price;
+  }
+
+  // Calculate pricing breakdown using same engine rules
+  const estimate = getPriceEstimate(zip, cartBasePriceCents);
+
+  if (!estimate.success) {
+    // Return empty rates to avoid blocking the checkout if input is completely malformed
+    return res.json({ rates: [] });
+  }
+
+  // Format price in decimals matching Shopify CarrierService specifications
+  const totalShippingPriceString = (estimate.shippingFeeCents / 100).toFixed(2);
+
+  const ratesResponse = {
+    rates: [
+      {
+        service_name: `Freight Delivery (${estimate.shippingMethod})`,
+        service_code: 'sofabed-freight-shipping',
+        total_price: totalShippingPriceString,
+        currency: rateRequest.currency || 'USD',
+        description: `Estimate: ${estimate.deliveryTimeline} from TX warehouse`
+      }
+    ]
+  };
+
+  console.log(`[Carrier Service Webhook] Calculated rate: $${totalShippingPriceString} for ZIP: ${zip}`);
+  return res.json(ratesResponse);
+});
+
 // Fallback to index.html for any unhandled routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

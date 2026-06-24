@@ -1,0 +1,205 @@
+{% comment %}
+  Shopify ZIP Code-Based Product Pricing Widget - Theme App Extension App Block
+  -----------------------------------------------------------------------------
+  This block can be added by merchants to their product templates via the theme customizer.
+  Custom styling and colors are configurable in the block settings schema.
+{% endcomment %}
+
+<!-- Link css asset and js asset -->
+{{ 'zip-pricing.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'zip-pricing.js' | asset_url }}" defer="defer"></script>
+
+<!-- Export variant pricing map to global scope for static js asset access -->
+{% capture variants_json %}
+{
+  {% for variant in product.variants %}
+    "{{ variant.id }}": {{ variant.price }}{% unless forloop.last %},{% endunless %}
+  {% endfor %}
+}
+{% endcapture %}
+
+<script>
+  window.SF_VARIANT_PRICES = {{ variants_json }};
+  window.SF_DEFAULT_PRODUCT_PRICE = {{ product.selected_or_first_available_variant.price | default: product.price | default: 139900 }};
+</script>
+
+<!-- Dynamic inline style variables populated from theme customizer settings -->
+<style>
+  #sf-zip-widget-{{ block.id }} {
+    --sf-btn-bg: {{ block.settings.button_bg_color }};
+    --sf-btn-bg-hover: {{ block.settings.button_bg_hover_color }};
+    --sf-btn-color: {{ block.settings.button_text_color }};
+    --sf-border-color: {{ block.settings.border_color }};
+    background-color: {{ block.settings.background_color }};
+    max-width: {{ block.settings.widget_max_width }}px;
+    margin: {{ block.settings.margin_top }}px auto {{ block.settings.margin_bottom }}px auto;
+  }
+</style>
+
+<!-- ZIP Code Pricing Widget Container -->
+<div class="sf-zip-widget" id="sf-zip-widget-{{ block.id }}">
+  
+  <!-- Header -->
+  <div class="sf-widget-header">
+    <span class="sf-widget-title">
+      {{ block.settings.title }}
+    </span>
+    <span class="sf-widget-badge" id="sf-widget-badge">
+      <span class="sf-widget-badge-dot"></span>
+      Calculated
+    </span>
+  </div>
+
+  <!-- Input Field & Button -->
+  <div class="sf-widget-form-row">
+    <input 
+      type="text" 
+      id="sf-zip-input" 
+      placeholder="{{ block.settings.input_placeholder }}" 
+      maxlength="5" 
+      pattern="\d*"
+    >
+    <button 
+      type="button" 
+      id="sf-zip-submit" 
+      onclick="sfCalculateZipPrice()"
+    >
+      {{ block.settings.button_text }}
+    </button>
+  </div>
+
+  <!-- Result Container (Fades in dynamically) -->
+  <div class="sf-widget-result" id="sf-widget-result">
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      
+      <!-- Base Price -->
+      <div class="sf-res-row">
+        <span>Item Price:</span>
+        <span id="sf-res-base-price">$0.00</span>
+      </div>
+
+      <!-- Shipping -->
+      <div class="sf-res-row">
+        <span>Shipping (from TX):</span>
+        <span id="sf-res-shipping">$0.00</span>
+      </div>
+
+      <!-- Divider -->
+      <div class="sf-res-divider"></div>
+
+      <!-- Total Price -->
+      <div class="sf-res-total-row">
+        <span>Local Delivered Price:</span>
+        <span id="sf-res-total" class="sf-res-total-price">$0.00</span>
+      </div>
+    </div>
+
+    <!-- Logistics Details -->
+    <div class="sf-shipping-badge">
+      <div id="sf-res-method" class="sf-shipping-badge-method">Ground Freight</div>
+      <div>Delivery Estimate: <strong id="sf-res-timeline">3-5 business days</strong></div>
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "ZIP Shipping Calculator",
+  "target": "section",
+  "enabled_on": {
+    "templates": ["product"]
+  },
+  "settings": [
+    {
+      "type": "header",
+      "content": "Content Settings"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Widget Title",
+      "default": "Calculate Local Shipping"
+    },
+    {
+      "type": "text",
+      "id": "input_placeholder",
+      "label": "Input Placeholder",
+      "default": "Enter 5-digit ZIP code"
+    },
+    {
+      "type": "text",
+      "id": "button_text",
+      "label": "Button Text",
+      "default": "Check Price"
+    },
+    {
+      "type": "header",
+      "content": "Aesthetics & Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background Color",
+      "default": "#fcfcfc"
+    },
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "Border Color",
+      "default": "#e8e8e8"
+    },
+    {
+      "type": "color",
+      "id": "button_bg_color",
+      "label": "Button Background Color",
+      "default": "#f9aa00"
+    },
+    {
+      "type": "color",
+      "id": "button_bg_hover_color",
+      "label": "Button Hover Background Color",
+      "default": "#e09900"
+    },
+    {
+      "type": "color",
+      "id": "button_text_color",
+      "label": "Button Text Color",
+      "default": "#1c1b1b"
+    },
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "range",
+      "id": "widget_max_width",
+      "min": 280,
+      "max": 600,
+      "step": 10,
+      "unit": "px",
+      "label": "Widget Max Width",
+      "default": 400
+    },
+    {
+      "type": "range",
+      "id": "margin_top",
+      "min": 0,
+      "max": 60,
+      "step": 2,
+      "unit": "px",
+      "label": "Margin Top",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "margin_bottom",
+      "min": 0,
+      "max": 60,
+      "step": 2,
+      "unit": "px",
+      "label": "Margin Bottom",
+      "default": 20
+    }
+  ]
+}
+{% endschema %}

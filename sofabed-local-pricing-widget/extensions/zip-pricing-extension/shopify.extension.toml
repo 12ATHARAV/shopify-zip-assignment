@@ -1,0 +1,8 @@
+# Shopify Theme App Extension Configuration
+api_version = "2024-04"
+
+[[extensions]]
+name = "zip-pricing-extension"
+type = "theme"
+handle = "zip-pricing-extension"
+uid = "de95b803-3a7a-abe2-8905-14d53d477fe1b533cc58"
