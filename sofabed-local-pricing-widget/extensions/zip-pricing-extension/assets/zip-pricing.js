@@ -165,83 +165,68 @@
     }
   }
 
-  // Inject hidden form parameters so they are passed to the checkout session
-  function sfInjectCheckoutFormInputs(form, zip) {
-    const fields = [
-      { name: 'checkout[shipping_address][zip]', value: zip },
-      { name: 'checkout[shipping_address][country]', value: 'US' }
-    ];
-
-    fields.forEach(function(field) {
-      let input = form.querySelector(`input[name="${field.name}"]`);
-      if (!input) {
-        input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = field.name;
-        form.appendChild(input);
-      }
-      input.value = field.value;
-    });
-  }
-
   // Intercept checkout actions to inject the cached ZIP code and add shipping variant
   function sfSetupCheckoutInterceptor() {
-    // 1. Intercept clicks on links or buttons redirecting to checkout
-    document.addEventListener('click', async function(event) {
-      const target = event.target.closest('a[href*="/checkout"], [name="checkout"]');
-      if (!target) return;
-
+    // Helper function to handle async checkout redirect
+    async function handleCheckout(event, checkoutUrl) {
       const cachedZip = localStorage.getItem('sf_customer_zip');
-      if (!cachedZip) return;
+      if (!cachedZip) return; // Let default checkout happen if no ZIP
 
       event.preventDefault();
       event.stopPropagation();
 
-      // Sync shipping variant to cart dynamically
+      // 1. Sync shipping rate variant to cart dynamically
       const shippingFee = localStorage.getItem('sf_shipping_fee_cents');
       const variantId = SHIPPING_VARIANT_MAPPING[shippingFee];
       if (variantId) {
         await sfAddShippingToCart(variantId);
       }
 
-      // If it's a standard link, append query parameters
-      if (target.tagName === 'A') {
+      // 2. Redirect to checkout with ZIP parameters to guarantee pre-population
+      let cleanUrl = '/checkout';
+      if (checkoutUrl && (checkoutUrl.includes('/checkout') || checkoutUrl.includes('/cart'))) {
         try {
-          const url = new URL(target.href, window.location.origin);
-          url.searchParams.set('checkout[shipping_address][zip]', cachedZip);
-          url.searchParams.set('checkout[shipping_address][country]', 'US');
-          window.location.href = url.toString();
+          const url = new URL(checkoutUrl, window.location.origin);
+          cleanUrl = url.pathname + url.search;
         } catch (e) {
-          window.location.href = target.href + (target.href.includes('?') ? '&' : '?') + `checkout[shipping_address][zip]=${cachedZip}&checkout[shipping_address][country]=US`;
+          cleanUrl = checkoutUrl;
         }
-      } 
-      // If it's a form submit button, inject hidden inputs and submit
-      else {
+      }
+      
+      const separator = cleanUrl.includes('?') ? '&' : '?';
+      // Build final checkout redirect url with shipping pre-fill params
+      window.location.href = `/checkout${separator}checkout[shipping_address][zip]=${cachedZip}&checkout[shipping_address][country]=US`;
+    }
+
+    // 1. Intercept clicks on links redirecting to checkout
+    document.addEventListener('click', function(event) {
+      const target = event.target.closest('a[href*="/checkout"], [name="checkout"]');
+      if (!target) return;
+
+      // Handle standard link clicks or checkout buttons
+      if (target.tagName === 'A') {
+        handleCheckout(event, target.href);
+      } else {
+        // If it's a checkout button outside a form, trigger redirect
         const form = target.closest('form');
-        if (form) {
-          sfInjectCheckoutFormInputs(form, cachedZip);
-          form.submit();
+        if (!form) {
+          handleCheckout(event, '/checkout');
         }
       }
     });
 
-    // 2. Intercept standard cart form submit events
-    document.addEventListener('submit', async function(event) {
+    // 2. Intercept cart form submit events (excluding add to cart)
+    document.addEventListener('submit', function(event) {
       const form = event.target;
-      if (form.action && (form.action.includes('/cart') || form.action.includes('/checkout'))) {
-        const cachedZip = localStorage.getItem('sf_customer_zip');
-        if (!cachedZip) return;
-
-        event.preventDefault();
-        
-        const shippingFee = localStorage.getItem('sf_shipping_fee_cents');
-        const variantId = SHIPPING_VARIANT_MAPPING[shippingFee];
-        if (variantId) {
-          await sfAddShippingToCart(variantId);
+      const action = form.getAttribute('action') || '';
+      
+      // Target only checkout/cart form submissions, specifically ignoring '/cart/add'
+      if (action === '/cart' || action === '/checkout' || action.includes('/checkouts') || form.querySelector('[name="checkout"]')) {
+        // Skip intercepting add to cart actions
+        if (action.includes('/cart/add')) {
+          return;
         }
-
-        sfInjectCheckoutFormInputs(form, cachedZip);
-        form.submit();
+        handleCheckout(event, action || '/checkout');
       }
     });
   }
