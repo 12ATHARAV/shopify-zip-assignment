@@ -68,6 +68,9 @@
 
         // Update the theme's native price container (if found)
         sfUpdateNativeThemePrice(data.formattedTotalPrice);
+        
+        // Cache shipping fee in cents for cart checkout sync
+        localStorage.setItem('sf_shipping_fee_cents', data.shippingFeeCents);
       } else {
         console.error('ZIP pricing calculation failed:', data.error);
         if (!isSilent) {
@@ -112,6 +115,56 @@
   window.sfCalculateZipPrice = sfCalculateZipPrice;
   window.sfGetActiveBasePrice = sfGetActiveBasePrice;
 
+  // Dynamic mapping of shipping fee prices (cents) to their corresponding Shopify variant IDs
+  const SHIPPING_VARIANT_MAPPING = {
+    10000: '47998567186619', // $100.00 shipping fee
+    30000: '47998567219387', // $300.00 shipping fee
+    40000: '47998567252155', // $400.00 shipping fee
+    9900: '47998567186619',  // $99.00 regional rate -> fallback to $100 variant
+    28900: '47998567219387'  // $289.00 regional rate -> fallback to $300 variant
+  };
+
+  // Add the correct shipping rate product variant to the cart and clean up any old ones
+  async function sfAddShippingToCart(variantId) {
+    try {
+      const cartRes = await fetch('/cart.js');
+      const cart = await cartRes.json();
+      
+      const isAlreadyInCart = cart.items.some(item => item.variant_id === parseInt(variantId));
+      if (isAlreadyInCart) {
+        return; // Already added!
+      }
+
+      // Identify other shipping variants to remove so we don't double charge
+      const shippingVariantIds = Object.values(SHIPPING_VARIANT_MAPPING);
+      const itemsToRemove = {};
+      cart.items.forEach(item => {
+        if (shippingVariantIds.includes(item.variant_id.toString()) && item.variant_id.toString() !== variantId) {
+          itemsToRemove[item.variant_id] = 0;
+        }
+      });
+
+      if (Object.keys(itemsToRemove).length > 0) {
+        await fetch('/cart/update.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ updates: itemsToRemove })
+        });
+      }
+
+      // Add the new correct shipping variant
+      await fetch('/cart/add.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: [{ id: variantId, quantity: 1 }]
+        })
+      });
+    } catch (err) {
+      console.error('Failed to sync shipping variant to cart:', err);
+    }
+  }
+
   // Inject hidden form parameters so they are passed to the checkout session
   function sfInjectCheckoutFormInputs(form, zip) {
     const fields = [
@@ -131,19 +184,28 @@
     });
   }
 
-  // Intercept checkout actions to inject the cached ZIP code
+  // Intercept checkout actions to inject the cached ZIP code and add shipping variant
   function sfSetupCheckoutInterceptor() {
     // 1. Intercept clicks on links or buttons redirecting to checkout
-    document.addEventListener('click', function(event) {
+    document.addEventListener('click', async function(event) {
       const target = event.target.closest('a[href*="/checkout"], [name="checkout"]');
       if (!target) return;
 
       const cachedZip = localStorage.getItem('sf_customer_zip');
       if (!cachedZip) return;
 
+      event.preventDefault();
+      event.stopPropagation();
+
+      // Sync shipping variant to cart dynamically
+      const shippingFee = localStorage.getItem('sf_shipping_fee_cents');
+      const variantId = SHIPPING_VARIANT_MAPPING[shippingFee];
+      if (variantId) {
+        await sfAddShippingToCart(variantId);
+      }
+
       // If it's a standard link, append query parameters
       if (target.tagName === 'A') {
-        event.preventDefault();
         try {
           const url = new URL(target.href, window.location.origin);
           url.searchParams.set('checkout[shipping_address][zip]', cachedZip);
@@ -153,23 +215,33 @@
           window.location.href = target.href + (target.href.includes('?') ? '&' : '?') + `checkout[shipping_address][zip]=${cachedZip}&checkout[shipping_address][country]=US`;
         }
       } 
-      // If it's a form submit button, inject hidden inputs
+      // If it's a form submit button, inject hidden inputs and submit
       else {
         const form = target.closest('form');
         if (form) {
           sfInjectCheckoutFormInputs(form, cachedZip);
+          form.submit();
         }
       }
     });
 
     // 2. Intercept standard cart form submit events
-    document.addEventListener('submit', function(event) {
+    document.addEventListener('submit', async function(event) {
       const form = event.target;
       if (form.action && (form.action.includes('/cart') || form.action.includes('/checkout'))) {
         const cachedZip = localStorage.getItem('sf_customer_zip');
-        if (cachedZip) {
-          sfInjectCheckoutFormInputs(form, cachedZip);
+        if (!cachedZip) return;
+
+        event.preventDefault();
+        
+        const shippingFee = localStorage.getItem('sf_shipping_fee_cents');
+        const variantId = SHIPPING_VARIANT_MAPPING[shippingFee];
+        if (variantId) {
+          await sfAddShippingToCart(variantId);
         }
+
+        sfInjectCheckoutFormInputs(form, cachedZip);
+        form.submit();
       }
     });
   }
