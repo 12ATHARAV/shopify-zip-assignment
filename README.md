@@ -62,6 +62,12 @@ Calculations originate from the **Dallas, Texas Warehouse (ZIP 75201)**. Pricing
     *   **Long-Distance Zone (Prefixes 0, 1, 2, 4, 5, 8, 9)**: `$300.00` (4-6 days)
 *   **Cent-based Integer Calculations**: Avoids decimal floating-point representation bugs by performing all server-side additions, subtotals, and calculations in integer cents (e.g., `$1399.00` is represented as `139900` cents).
 
+### 2. Storefront App Extension & Add-to-Cart Interceptor (`zip-pricing-extension`)
+*   **Decoupled Block Assets**: Storefront assets (`zip-pricing.js` and `zip-pricing.css`) are loaded via Shopify CDN asset filters, separating logic from raw page templates.
+*   **Merchant Customization Schema**: Implements target settings inside `pricing_widget.liquid`'s Schema to allow configuration of background color, borders, max width, and margins directly from the Shopify Admin Theme Editor.
+*   **Variant Selection Listener**: Listens to storefront inputs (change events on select boxes, inputs, selectors) and dynamically updates shipping cost when a customer switches sizes or colors of the Sofa Bed.
+*   **Add-to-Cart Interceptor**: Intercepts product add-to-cart clicks/submits using capturing events. If a ZIP has been calculated, it forces a single POST request to `/cart/add.js` that groups both the Sofa product variant and the calculated shipping variant (locking quantities to 1) into a single transaction, bypassing separate API roundtrips.
+
 ---
 
 ## 📁 Repository Structure
