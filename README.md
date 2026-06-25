@@ -48,6 +48,22 @@ To demonstrate a production-ready e-commerce integration, this solution goes bey
 
 ---
 
+## 📦 Detailed Feature Architecture
+
+### 1. Regional Routing & Pricing Rules Engine (`pricing.js`)
+Calculations originate from the **Dallas, Texas Warehouse (ZIP 75201)**. Pricing and timeline calculations are divided into two main layers:
+*   **Core Requirements (Test Cases)**:
+    *   `75028` (Flower Mound, TX): `$100.00` shipping (Local Ground, 1-2 days)
+    *   `10001` (New York, NY): `$300.00` shipping (East Coast Freight, 4-6 days)
+    *   `90210` (Beverly Hills, CA): `$400.00` shipping (West Coast Freight, 4-5 days)
+*   **Dynamic Prefix Routing Engine**:
+    *   Matches the first digit of any US ZIP code.
+    *   **Local Zone (Prefixes 7, 3, 6)**: `$100.00` (1-3 days)
+    *   **Long-Distance Zone (Prefixes 0, 1, 2, 4, 5, 8, 9)**: `$300.00` (4-6 days)
+*   **Cent-based Integer Calculations**: Avoids decimal floating-point representation bugs by performing all server-side additions, subtotals, and calculations in integer cents (e.g., `$1399.00` is represented as `139900` cents).
+
+---
+
 ## 📁 Repository Structure
 
 ```text
