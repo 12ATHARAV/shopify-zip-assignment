@@ -85,16 +85,22 @@ Calculations originate from the **Dallas, Texas Warehouse (ZIP 75201)**. Pricing
 
 ```text
 shopify-zip-assignment/
-├── shopify/
-│   └── zip-pricing-widget.liquid  # Custom Liquid + Vanilla JS widget code
+├── extensions/
+│   └── zip-pricing-extension/          # Standalone theme app extension copy
 ├── public/
-│   └── index.html                 # Simulator Dashboard HTML & styling
-├── pricing.js                     # Regional shipping and rules engine
-├── server.js                      # Express API server & CORS configuration
-├── Dockerfile                     # Container config for Railway
-├── package.json                   # Project packages & start scripts
-├── .gitignore                     # Git ignore rules
-└── README.md                      # Documentation
+│   └── index.html                      # Simulator Dashboard HTML & styling
+├── shopify/
+│   └── zip-pricing-widget.liquid       # Original Custom Liquid layout code
+├── sofabed-local-pricing-widget/        # Shopify App root directory
+│   ├── extensions/
+│   │   ├── zip-pricing-extension/      # Theme App Extension block & assets
+│   │   └── zip-validation/             # Cart Validation Function (Wasm/TypeScript)
+│   └── shopify.app.toml                # App configuration file
+├── pricing.js                          # Regional shipping and rules engine
+├── server.js                           # Express API server & CORS configuration
+├── Dockerfile                          # Container config for Railway
+├── package.json                        # Project packages & start scripts
+└── README.md                           # Documentation
 ```
 
 ---
