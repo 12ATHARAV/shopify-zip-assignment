@@ -73,6 +73,12 @@ Calculations originate from the **Dallas, Texas Warehouse (ZIP 75201)**. Pricing
 *   **Cart Permalink Generation**: Bypasses the Shopify checkout query parameter strip restriction (which block custom query params inside standard `/checkout` page loads) by generating a dynamic **Cart Permalink** (e.g. `/cart/variant_id:qty,shipping_variant_id:1?checkout[shipping_address][zip]=XXXXX...`) that forces Shopify to render the checkout page with the pre-configured items.
 *   **Session Caching via Shopify Cart API**: Automatically translates the 5-digit ZIP to a 2-letter state code via `sfGetStateFromZip` and pushes a POST request to `/cart/prepare_shipping_rates.json` containing the address. This populates Shopify's checkout session cache, ensuring the ZIP code is pre-filled on the delivery page.
 
+### 4. Server-Side Security & Checkout Validation Function (`zip-validation`)
+*   **WebAssembly Cart Validation Function**: A server-side Cart Validation Function written in TypeScript and compiled to a WebAssembly binary (`dist/function.wasm`) running securely inside Shopify's serverless runtime.
+*   **Checkout ZIP & Street Address Enforcement**: Queries `cart.deliveryGroups.deliveryAddress.zip` and `address1` in the checkout. To ensure the validation doesn't fire prematurely (e.g. before the customer has even entered their street address), validation only enforces shipping fee matches once both a ZIP and a street address (`address1`) are present.
+*   **Tamper-Proof Block**: If a customer modifies their ZIP code at checkout to a cheaper zone without recalculating, the checkout is blocked with an error message preventing checkout completion.
+*   **API CORS & Referrer Restriction**: The Railway Express backend (`server.js`) restricts incoming requests using CORS rules that check both `Origin` and `Referer` headers, only allowing requests from the storefront domain (`sofabed.com` and its demo variants).
+
 ---
 
 ## 📁 Repository Structure
