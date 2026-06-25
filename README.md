@@ -68,6 +68,11 @@ Calculations originate from the **Dallas, Texas Warehouse (ZIP 75201)**. Pricing
 *   **Variant Selection Listener**: Listens to storefront inputs (change events on select boxes, inputs, selectors) and dynamically updates shipping cost when a customer switches sizes or colors of the Sofa Bed.
 *   **Add-to-Cart Interceptor**: Intercepts product add-to-cart clicks/submits using capturing events. If a ZIP has been calculated, it forces a single POST request to `/cart/add.js` that groups both the Sofa product variant and the calculated shipping variant (locking quantities to 1) into a single transaction, bypassing separate API roundtrips.
 
+### 3. Cart Checkout Redirection & Session Address Caching
+*   **Checkout Interceptor**: Intercepts checkouts via event capturing (listening to clicks on `a[href*="/checkout"]`, `[name="checkout"]`, and submit actions on `/cart` forms) to redirect the user through our custom checkout builder.
+*   **Cart Permalink Generation**: Bypasses the Shopify checkout query parameter strip restriction (which block custom query params inside standard `/checkout` page loads) by generating a dynamic **Cart Permalink** (e.g. `/cart/variant_id:qty,shipping_variant_id:1?checkout[shipping_address][zip]=XXXXX...`) that forces Shopify to render the checkout page with the pre-configured items.
+*   **Session Caching via Shopify Cart API**: Automatically translates the 5-digit ZIP to a 2-letter state code via `sfGetStateFromZip` and pushes a POST request to `/cart/prepare_shipping_rates.json` containing the address. This populates Shopify's checkout session cache, ensuring the ZIP code is pre-filled on the delivery page.
+
 ---
 
 ## 📁 Repository Structure
