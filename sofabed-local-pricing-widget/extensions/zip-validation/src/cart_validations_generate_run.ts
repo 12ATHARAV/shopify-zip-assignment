@@ -7,13 +7,16 @@ import type {
 export function cartValidationsGenerateRun(input: CartValidationsGenerateRunInput): CartValidationsGenerateRunResult {
   const errors: ValidationError[] = [];
 
-  // 1. Resolve shipping address zip code
-  // If deliveryGroups is present, extract zip code from the first group's address
+  // 1. Resolve shipping address zip code and street address
+  // If deliveryGroups is present, extract zip code and address1 from the first group's address
   const deliveryGroup = input.cart.deliveryGroups?.[0];
   const zip = deliveryGroup?.deliveryAddress?.zip?.trim();
   const address1 = deliveryGroup?.deliveryAddress?.address1?.trim();
 
-  // If there is no shipping ZIP code or street address entered yet, we don't validate (customer is not in checkout information stage)
+  // Early Gatekeeper Check:
+  // If the customer has not entered both their ZIP code and street address (address1),
+  // we skip validation. This prevents showing confusing mismatch errors to the customer
+  // while they are still in the process of typing their shipping information.
   if (!zip || !address1) {
     return { operations: [] };
   }
