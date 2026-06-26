@@ -75,7 +75,7 @@ Calculations originate from the **Dallas, Texas Warehouse (ZIP 75201)**. Pricing
 
 ### 4. Server-Side Security & Checkout Validation Function (`zip-validation`)
 *   **WebAssembly Cart Validation Function**: A server-side Cart Validation Function written in TypeScript and compiled to a WebAssembly binary (`dist/function.wasm`) running securely inside Shopify's serverless runtime.
-*   **Checkout ZIP & Street Address Enforcement**: Queries `cart.deliveryGroups.deliveryAddress.zip` and `address1` in the checkout. To ensure the validation doesn't fire prematurely (e.g. before the customer has even entered their street address), validation only enforces shipping fee matches once both a ZIP and a street address (`address1`) are present.
+*   **Checkout ZIP & Street Address Gatekeeper (`address1`)**: Queries both `zip` and `address1` (street address) in the checkout object. To ensure the validation doesn't fire prematurely (e.g. while the user is still typing or has only partially loaded the delivery form), the function skips validation until both a valid ZIP and a street address are entered, improving the checkout UX.
 *   **Tamper-Proof Block**: If a customer modifies their ZIP code at checkout to a cheaper zone without recalculating, the checkout is blocked with an error message preventing checkout completion.
 *   **API CORS & Referrer Restriction**: The Railway Express backend (`server.js`) restricts incoming requests using CORS rules that check both `Origin` and `Referer` headers, only allowing requests from the storefront domain (`sofabed.com` and its demo variants).
 
